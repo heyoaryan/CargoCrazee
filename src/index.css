@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-500 to-green-400 bg-clip-text text-transparent;
+  }
+
+  .bg-300% {
+    background-size: 300% 300%;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles */
+*:focus {
+  outline: none;
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Loading animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+/* Hover effects */
+.hover-scale {
+  transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* Gradient backgrounds */
+.gradient-bg-1 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-bg-2 {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradient-bg-3 {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Mobile responsive text */
+@media (max-width: 640px) {
+  .text-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .heading-responsive {
+    font-size: 1.5rem;
+  }
+}
+
+/* Prevent horizontal overflow on mobile */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  
+  .container {
+    overflow-x: hidden;
+  }
+}
+
+/* Ensure proper viewport handling */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 640px) {
+  .mobile-full-width {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+  }
+  
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}

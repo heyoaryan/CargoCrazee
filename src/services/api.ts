@@ -1,5 +1,14 @@
+// Debug environment variables
+console.log('Environment Variables Debug:');
+console.log('VITE_API_BASE_URL:', (import.meta as any)?.env?.VITE_API_BASE_URL);
+console.log('VITE_AI_SERVICE_URL:', (import.meta as any)?.env?.VITE_AI_SERVICE_URL);
+
 const API_BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
 const AI_SERVICE_URL = (import.meta as any)?.env?.VITE_AI_SERVICE_URL || 'http://localhost:8000';
+
+console.log('Final URLs:');
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('AI_SERVICE_URL:', AI_SERVICE_URL);
 
 // Types
 export interface User {

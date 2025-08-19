@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { 
   User, 
   Mail, 
-  Building, 
   Camera, 
   Upload, 
   Eye, 
@@ -15,6 +14,7 @@ import {
   Image
 } from 'lucide-react';
 import { AlertContext } from '../App';
+import { apiService } from '../services/api';
 
 interface ProfileProps {
   user?: { name: string; email: string; avatarUrl?: string | null } | null;
@@ -28,6 +28,8 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null);
   const [isEditingSecurity, setIsEditingSecurity] = useState(false);
+  const [totalDeliveries, setTotalDeliveries] = useState<number>(0);
+  const [documentsCount, setDocumentsCount] = useState<number>(Number(localStorage.getItem('uploadedDocuments') || '0'));
   
   const { addAlert } = useContext(AlertContext);
 
@@ -69,6 +71,25 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
   useEffect(() => {
     localStorage.setItem('profileData', JSON.stringify(profileData));
   }, [profileData]);
+
+  // Fetch actual totals for account statistics
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const overview = await apiService.getDashboardOverview();
+        setTotalDeliveries(overview.totalDeliveries || 0);
+      } catch (err) {
+        console.error('Failed to load dashboard overview:', err);
+      }
+      try {
+        const docs = Number(localStorage.getItem('uploadedDocuments') || '0');
+        setDocumentsCount(docs);
+      } catch (err) {
+        console.error('Failed to load documents count:', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -141,7 +162,9 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
       });
       setSelectedDocs(prev => ({ ...prev, [key]: null }));
       const currentCount = Number(localStorage.getItem('uploadedDocuments') || '0');
-      localStorage.setItem('uploadedDocuments', String(currentCount + 1));
+      const next = currentCount + 1;
+      localStorage.setItem('uploadedDocuments', String(next));
+      setDocumentsCount(next);
     } catch (e) {
       console.error(e);
       addAlert({
@@ -161,7 +184,7 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="flex-1 overflow-auto">
-        <div className="p-4 lg:p-6 max-w-4xl mx-auto">
+        <div className="p-4 lg:p-6 max-w-5xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -245,6 +268,8 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                 </div>
               </div>
 
+              {/* Business Details removed as requested */}
+
               {/* Security Settings (order-3 on mobile) */}
               <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -287,44 +312,46 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      New Password
-                    </label>
-                    <div className="relative">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          name="newPassword"
+                          value={profileData.newPassword}
+                          onChange={handleInputChange}
+                          disabled={!isEditingSecurity}
+                          className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-50"
+                          placeholder="Enter new password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => isEditingSecurity && setShowNewPassword(!showNewPassword)}
+                          disabled={!isEditingSecurity}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {showNewPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm New Password
+                      </label>
                       <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        name="newPassword"
-                        value={profileData.newPassword}
+                        type="password"
+                        name="confirmPassword"
+                        value={profileData.confirmPassword}
                         onChange={handleInputChange}
                         disabled={!isEditingSecurity}
                         className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-50"
-                        placeholder="Enter new password"
+                        placeholder="Confirm new password"
                       />
-                      <button
-                        type="button"
-                        onClick={() => isEditingSecurity && setShowNewPassword(!showNewPassword)}
-                        disabled={!isEditingSecurity}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {showNewPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />}
-                      </button>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={profileData.confirmPassword}
-                      onChange={handleInputChange}
-                      disabled={!isEditingSecurity}
-                      className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-50"
-                      placeholder="Confirm new password"
-                    />
                   </div>
 
                   {isEditingSecurity && (
@@ -335,148 +362,146 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                 </div>
               </div>
 
-              {/* Company Documents (order-4 on mobile) */}
-              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                <div className="flex items-center space-x-2 mb-6">
+              {/* Company Documents moved to full-width section below */}
+            </motion.div>
+
+            {/* Right sidebar: Avatar + Account Stats */}
+            <div className="order-1 lg:order-2 lg:col-span-1 space-y-6 lg:sticky lg:top-6">
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+                  <div className="flex items-center space-x-2 mb-6">
+                    <Image className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Profile Picture</h2>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="relative inline-block mb-4">
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-blue-500 to-green-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-4xl font-bold ring-4 ring-white shadow">
+                        {avatarPreview ? (
+                          <img
+                            src={avatarPreview}
+                            alt="Profile"
+                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover"
+                          />
+                        ) : (
+                          profileData.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      {isEditing && (
+                        <label
+                          htmlFor="avatar-upload"
+                          className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200"
+                        >
+                          <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                        </label>
+                      )}
+                      <input
+                        type="file"
+                        id="avatar-upload"
+                        onChange={handleAvatarChange}
+                        accept="image/*"
+                        className="hidden"
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      {isEditing ? 'Click the camera icon to change your profile picture' : 'Profile picture can only be changed in edit mode'}
+                    </p>
+                    {avatarPreview && isEditing && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setAvatarPreview(null)}
+                          className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-100"
+                        >
+                          Remove Photo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <div className="bg-gradient-to-r from-blue-600 to-green-500 rounded-2xl p-4 sm:p-6 text-white">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4">Account Statistics</h3>
+                  <div className="space-y-3 text-sm sm:text-base">
+                    <div className="flex justify-between">
+                      <span>Member Since</span>
+                      <span className="font-medium">{new Date(localStorage.getItem('userCreatedAt') || Date.now()).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Deliveries</span>
+                      <span className="font-medium">{totalDeliveries}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Documents</span>
+                      <span className="font-medium">{documentsCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Last Login</span>
+                      <span className="font-medium">{new Date(localStorage.getItem('lastLogin') || Date.now()).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Full-width Company Documents section */}
+          <section className="mt-8">
+            <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-6 lg:p-8">
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+                <div className="flex items-center space-x-2">
                   <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Company Documents</h2>
                 </div>
+              </div>
 
-                <div className="space-y-4">
-                  {documentTypes.map(doc => (
-                    <div key={doc.key} className="border border-gray-200 rounded-lg p-3 sm:p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Upload className="h-4 w-4 text-gray-500" />
-                          <div>
-                            <div className="text-sm sm:text-base font-medium text-gray-800">{doc.label}</div>
-                            <div className="text-xs text-gray-500">Upload a clear PDF or image</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="file"
-                            id={`doc-${doc.key}`}
-                            className="hidden"
-                            onChange={(e) => onSelectDocument(doc.key, e.target.files?.[0] || null)}
-                            accept=".pdf,image/*"
-                          />
-                          <label
-                            htmlFor={`doc-${doc.key}`}
-                            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-200 cursor-pointer"
-                          >
-                            Choose
-                          </label>
-                          <button
-                            onClick={() => onUploadDocument(doc.key)}
-                            disabled={!selectedDocs[doc.key]}
-                            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Upload
-                          </button>
+              <div className="space-y-4">
+                {documentTypes.map(doc => (
+                  <div key={doc.key} className="border border-gray-200 rounded-xl p-4 sm:p-5 hover:shadow-md transition-shadow">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div className="flex items-start space-x-3 min-w-0">
+                        <Upload className="h-4 w-4 text-gray-500 mt-1.5" />
+                        <div>
+                          <div className="text-base font-medium text-gray-800 leading-tight">{doc.label}</div>
+                          <div className="text-xs text-gray-500">Upload a clear PDF or image</div>
+                          {selectedDocs[doc.key] && (
+                            <div className="mt-2 text-xs text-gray-600 break-all">
+                              Selected: <span className="font-medium">{selectedDocs[doc.key]?.name}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {selectedDocs[doc.key] && (
-                        <div className="mt-2 text-xs text-gray-600">
-                          Selected: <span className="font-medium">{selectedDocs[doc.key]?.name}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
 
-            {/* Avatar - placed first on mobile */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="order-1 lg:order-2"
-            >
-              {/* Avatar */}
-              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                <div className="flex items-center space-x-2 mb-6">
-                  <Image className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Profile Picture</h2>
-                </div>
-
-                <div className="text-center">
-                  <div className="relative inline-block mb-4">
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-blue-500 to-green-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-4xl font-bold">
-                      {avatarPreview ? (
-                        <img
-                          src={avatarPreview}
-                          alt="Profile"
-                          className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover"
+                      <div className="flex items-center gap-2 md:shrink-0">
+                        <input
+                          type="file"
+                          id={`doc-${doc.key}`}
+                          className="hidden"
+                          onChange={(e) => onSelectDocument(doc.key, e.target.files?.[0] || null)}
+                          accept=".pdf,image/*"
                         />
-                      ) : (
-                        profileData.name.charAt(0).toUpperCase()
-                      )}
+                        <label
+                          htmlFor={`doc-${doc.key}`}
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 cursor-pointer whitespace-nowrap"
+                        >
+                          Choose
+                        </label>
+                        <button
+                          onClick={() => onUploadDocument(doc.key)}
+                          disabled={!selectedDocs[doc.key]}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          Upload
+                        </button>
+                      </div>
                     </div>
-                    {isEditing && (
-                      <label
-                        htmlFor="avatar-upload"
-                        className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200"
-                      >
-                        <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
-                      </label>
-                    )}
-                    <input
-                      type="file"
-                      id="avatar-upload"
-                      onChange={handleAvatarChange}
-                      accept="image/*"
-                      className="hidden"
-                      disabled={!isEditing}
-                    />
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-500">
-                    {isEditing ? 'Click the camera icon to change your profile picture' : 'Profile picture can only be changed in edit mode'}
-                  </p>
-                  {avatarPreview && isEditing && (
-                    <div className="mt-3">
-                      <button
-                        onClick={() => setAvatarPreview(null)}
-                        className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-100"
-                      >
-                        Remove Photo
-                      </button>
-                    </div>
-                  )}
-                </div>
+                ))}
               </div>
-
-            </motion.div>
-
-            {/* Account Stats - separate so it appears after info on mobile */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="order-4 lg:order-2"
-            >
-              <div className="bg-gradient-to-r from-blue-600 to-green-500 rounded-2xl p-4 sm:p-6 text-white">
-                <h3 className="text-base sm:text-lg font-semibold mb-4">Account Statistics</h3>
-                <div className="space-y-3 text-sm sm:text-base">
-                  <div className="flex justify-between">
-                    <span>Member Since</span>
-                    <span className="font-medium">{new Date(localStorage.getItem('userCreatedAt') || Date.now()).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Deliveries</span>
-                    <span className="font-medium">{localStorage.getItem('totalDeliveries') || '0'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Documents</span>
-                    <span className="font-medium">{localStorage.getItem('uploadedDocuments') || '0'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Last Login</span>
-                    <span className="font-medium">{new Date(localStorage.getItem('lastLogin') || Date.now()).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+            </div>
+          </section>
         </div>
       </main>
     </div>

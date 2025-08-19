@@ -7,7 +7,7 @@ import Logo from './Logo';
 
 interface NavbarProps {
   isAuthenticated: boolean;
-  user: { name: string; email: string } | null;
+  user: { name: string; email: string; avatarUrl?: string | null } | null;
   onLogout: () => void;
 }
 
@@ -121,11 +121,15 @@ const Navbar = ({ isAuthenticated, user, onLogout }: NavbarProps) => {
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-400 rounded-full flex items-center justify-center">
-                      <span className="text-white font-medium text-sm">
-                        {user?.name?.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-400 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">
+                          {user?.name?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <span className="font-medium hidden sm:block">{user?.name}</span>
                   </button>
 
@@ -182,13 +186,33 @@ const Navbar = ({ isAuthenticated, user, onLogout }: NavbarProps) => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden flex items-center">
+          {/* Mobile Menu Button and Notification Icon */}
+          <div className="lg:hidden flex items-center space-x-3">
+            {/* Bell Icon for Mobile - Only show if authenticated */}
+            {isAuthenticated && (
+              <Link
+                to="/alerts"
+                className="relative flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
+            
+            {/* Hamburger Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-600 hover:text-blue-600 transition-colors duration-200"
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2"
             >
-              <Menu className="h-6 w-6" />
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>

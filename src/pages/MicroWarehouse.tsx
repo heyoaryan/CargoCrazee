@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Warehouse, 
@@ -13,107 +13,56 @@ import {
   Calendar,
   Thermometer,
   Shield,
-  Truck
+  Truck,
+  CheckCircle,
+  X,
+  Plus,
+  BookOpen
 } from 'lucide-react';
+import { apiService } from '../services/api';
 
 const MicroWarehouse = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
+  const [bookingForm, setBookingForm] = useState({
+    spaceRequired: '',
+    duration: '',
+    startDate: '',
+    packageType: '',
+    specialRequirements: []
+  });
 
-  const warehouses = [
-    {
-      id: 1,
-      name: 'Delhi Central Hub',
-      location: 'Connaught Place',
-      distance: '2.5 km',
-      rating: 4.8,
-      reviews: 124,
-      pricePerDay: 45,
-      pricePerMonth: 1200,
-      capacity: '500 sq ft',
-      features: ['Climate Control', '24/7 Security', 'CCTV'],
-      type: 'Premium',
-      availability: 'Available',
-      lastMile: '15 mins',
-      image: 'warehouse1.jpg',
-      specialties: ['Electronics', 'Fashion'],
-    },
-    {
-      id: 2,
-      name: 'North Delhi Storage',
-      location: 'Karol Bagh',
-      distance: '1.8 km',
-      rating: 4.6,
-      reviews: 89,
-      pricePerDay: 35,
-      pricePerMonth: 950,
-      capacity: '350 sq ft',
-      features: ['Basic Security', 'Ground Floor'],
-      type: 'Standard',
-      availability: 'Available',
-      lastMile: '12 mins',
-      image: 'warehouse2.jpg',
-      specialties: ['General Goods', 'Documents'],
-    },
-    {
-      id: 3,
-      name: 'South Delhi Depot',
-      location: 'Lajpat Nagar',
-      distance: '3.2 km',
-      rating: 4.9,
-      reviews: 156,
-      pricePerDay: 55,
-      pricePerMonth: 1500,
-      capacity: '750 sq ft',
-      features: ['Temperature Control', 'Loading Dock', 'Insurance'],
-      type: 'Premium',
-      availability: 'Limited',
-      lastMile: '18 mins',
-      image: 'warehouse3.jpg',
-      specialties: ['Food Items', 'Pharmaceuticals'],
-    },
-    {
-      id: 4,
-      name: 'East Delhi Facility',
-      location: 'Laxmi Nagar',
-      distance: '4.1 km',
-      rating: 4.4,
-      reviews: 67,
-      pricePerDay: 30,
-      pricePerMonth: 800,
-      capacity: '280 sq ft',
-      features: ['Basic Storage', 'Manual Handling'],
-      type: 'Economy',
-      availability: 'Available',
-      lastMile: '20 mins',
-      image: 'warehouse4.jpg',
-      specialties: ['Textiles', 'Furniture'],
-    },
-    {
-      id: 5,
-      name: 'West Delhi Hub',
-      location: 'Janakpuri',
-      distance: '5.5 km',
-      rating: 4.7,
-      reviews: 203,
-      pricePerDay: 40,
-      pricePerMonth: 1100,
-      capacity: '420 sq ft',
-      features: ['Automated Systems', 'Express Pickup'],
-      type: 'Standard',
-      availability: 'Available',
-      lastMile: '25 mins',
-      image: 'warehouse5.jpg',
-      specialties: ['E-commerce', 'Books'],
-    },
-  ];
+  const [warehouses, setWarehouses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load warehouses data
+  useEffect(() => {
+    const loadWarehouses = async () => {
+      try {
+        setIsLoading(true);
+        // TODO: Replace with actual API call
+        // const data = await apiService.getMicroWarehouses();
+        // setWarehouses(data);
+        setWarehouses([]);
+      } catch (error) {
+        console.error('Error loading warehouses:', error);
+        setWarehouses([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadWarehouses();
+  }, []);
 
   const categories = [
-    { id: 'all', label: 'All Warehouses', count: warehouses.length },
-    { id: 'premium', label: 'Premium', count: warehouses.filter(w => w.type === 'Premium').length },
-    { id: 'standard', label: 'Standard', count: warehouses.filter(w => w.type === 'Standard').length },
-    { id: 'economy', label: 'Economy', count: warehouses.filter(w => w.type === 'Economy').length },
-    { id: 'available', label: 'Available Now', count: warehouses.filter(w => w.availability === 'Available').length },
+    { id: 'all', label: 'All Warehouses', count: 0 },
+    { id: 'premium', label: 'Premium', count: 0 },
+    { id: 'standard', label: 'Standard', count: 0 },
+    { id: 'economy', label: 'Economy', count: 0 },
+    { id: 'available', label: 'Available Now', count: 0 },
   ];
 
   const filteredWarehouses = warehouses.filter(warehouse => {
@@ -140,6 +89,31 @@ const MicroWarehouse = () => {
       case 'Full': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleBookingFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setBookingForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleBookingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Here you would typically make an API call to book the warehouse
+    console.log('Booking warehouse:', selectedWarehouse?.name, 'with details:', bookingForm);
+    setShowBookingForm(false);
+    setSelectedWarehouse(null);
+    setBookingForm({
+      spaceRequired: '',
+      duration: '',
+      startDate: '',
+      packageType: '',
+      specialRequirements: []
+    });
+  };
+
+  const openBookingForm = (warehouse: any) => {
+    setSelectedWarehouse(warehouse);
+    setShowBookingForm(true);
   };
 
   return (
@@ -205,11 +179,27 @@ const MicroWarehouse = () => {
           </div>
 
           {/* Warehouses Grid/List */}
-          <div className={viewMode === 'grid' 
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6' 
-            : 'space-y-4'
-          }>
-            {filteredWarehouses.map((warehouse, index) => (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading warehouses...</p>
+              </div>
+            </div>
+          ) : filteredWarehouses.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Warehouse className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">No Warehouses Available</h3>
+                <p className="text-gray-600">Check back later for available micro-warehouses.</p>
+              </div>
+            </div>
+          ) : (
+            <div className={viewMode === 'grid' 
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6' 
+              : 'space-y-4'
+            }>
+              {filteredWarehouses.map((warehouse, index) => (
               <motion.div
                 key={warehouse.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -259,12 +249,25 @@ const MicroWarehouse = () => {
                         </span>
                       </div>
 
-                      {/* Features */}
+                      {/* Space Availability */}
                       <div className="mb-4">
                         <div className="text-xs sm:text-sm text-gray-600 mb-2">
                           <Package className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
                           {warehouse.capacity} • Last-mile: {warehouse.lastMile}
                         </div>
+                        <div className="bg-gray-100 rounded-full h-2 mb-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${(warehouse.availableSpace / warehouse.totalSpace) * 100}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Available: {warehouse.availableSpace} sq ft of {warehouse.totalSpace} sq ft
+                        </div>
+                      </div>
+
+                      {/* Features */}
+                      <div className="mb-4">
                         <div className="flex flex-wrap gap-1">
                           {warehouse.features.slice(0, 2).map((feature, i) => (
                             <span key={i} className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
@@ -299,8 +302,12 @@ const MicroWarehouse = () => {
 
                       {/* Action Buttons */}
                       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                        <button className="flex-1 bg-gradient-to-r from-blue-500 to-green-400 text-white py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 text-sm">
-                          Book Now
+                        <button 
+                          onClick={() => openBookingForm(warehouse)}
+                          className="flex-1 bg-gradient-to-r from-blue-500 to-green-400 text-white py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 text-sm flex items-center justify-center space-x-1"
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          <span>Book Now</span>
                         </button>
                         <button className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm">
                           Details
@@ -342,6 +349,7 @@ const MicroWarehouse = () => {
                           </div>
                           <span>{warehouse.capacity}</span>
                           <span>Last-mile: {warehouse.lastMile}</span>
+                          <span>Available: {warehouse.availableSpace} sq ft</span>
                         </div>
                         
                         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -350,8 +358,12 @@ const MicroWarehouse = () => {
                             <div className="text-xs sm:text-sm text-green-600">₹{warehouse.pricePerMonth}/month</div>
                           </div>
                           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                            <button className="bg-gradient-to-r from-blue-500 to-green-400 text-white px-4 py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 text-sm">
-                              Book Now
+                            <button 
+                              onClick={() => openBookingForm(warehouse)}
+                              className="bg-gradient-to-r from-blue-500 to-green-400 text-white px-4 py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 text-sm flex items-center justify-center space-x-1"
+                            >
+                              <BookOpen className="h-4 w-4" />
+                              <span>Book Now</span>
                             </button>
                             <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm">
                               Details
@@ -364,7 +376,128 @@ const MicroWarehouse = () => {
                 )}
               </motion.div>
             ))}
-          </div>
+            </div>
+          )}
+
+          {/* Booking Modal */}
+          {showBookingForm && selectedWarehouse && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-800">Book Warehouse Space</h2>
+                  <button
+                    onClick={() => setShowBookingForm(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-2">{selectedWarehouse.name}</h3>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div><strong>Location:</strong> {selectedWarehouse.location}</div>
+                    <div><strong>Available Space:</strong> {selectedWarehouse.availableSpace} sq ft</div>
+                    <div><strong>Price:</strong> ₹{selectedWarehouse.pricePerDay}/day</div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleBookingSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Space Required (sq ft)
+                    </label>
+                    <input
+                      type="number"
+                      name="spaceRequired"
+                      value={bookingForm.spaceRequired}
+                      onChange={handleBookingFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter space required"
+                      min="1"
+                      max={selectedWarehouse.availableSpace}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Duration (days)
+                    </label>
+                    <input
+                      type="number"
+                      name="duration"
+                      value={bookingForm.duration}
+                      onChange={handleBookingFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter duration"
+                      min="1"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={bookingForm.startDate}
+                      onChange={handleBookingFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Package Type
+                    </label>
+                    <select
+                      name="packageType"
+                      value={bookingForm.packageType}
+                      onChange={handleBookingFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select package type</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Clothing">Clothing</option>
+                      <option value="Food Items">Food Items</option>
+                      <option value="Documents">Documents</option>
+                      <option value="Fragile Items">Fragile Items</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowBookingForm(false)}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-green-400 text-white px-4 py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200"
+                    >
+                      Confirm Booking
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
 
           {/* Benefits Section */}
           <motion.div
@@ -425,7 +558,7 @@ const MicroWarehouse = () => {
           >
             <div className="inline-block bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl px-6 py-3 shadow-lg">
               <p className="text-gray-600 text-xs sm:text-sm font-medium">
-                Strategic Storage • Same-Day Delivery • Climate Controlled • 24/7 Security
+                Strategic Storage • Same-Day Delivery • Climate Controlled • 24/7 Security • Easy Booking
               </p>
             </div>
           </motion.div>

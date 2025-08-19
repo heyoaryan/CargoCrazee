@@ -86,34 +86,60 @@ const Chatbot: React.FC<ChatbotProps> = ({ user }) => {
     <>
       {/* Floating button for mobile and desktop */}
       <button
-        className="fixed z-50 bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center focus:outline-none md:bottom-10 md:right-10 group"
-        style={{ display: open ? 'none' : 'flex', width: 64, height: 64, minWidth: 64, minHeight: 64, aspectRatio: '1/1' }}
+        className="fixed z-50 bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-10 md:right-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center focus:outline-none group"
+        style={{ 
+          display: open ? 'none' : 'flex', 
+          width: '56px', 
+          height: '56px', 
+          minWidth: '56px', 
+          minHeight: '56px',
+          aspectRatio: '1/1' 
+        }}
         aria-label="Open Chatbot"
         onClick={() => setOpen(true)}
         title="Chat with CargoCrazee Buddy"
       >
-        <span className="material-icons" style={{ fontSize: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>chat_bubble</span>
+        <span 
+          className="material-icons" 
+          style={{ 
+            fontSize: '28px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            width: '100%', 
+            height: '100%' 
+          }}
+        >
+          chat_bubble
+        </span>
       </button>
 
       {/* Chatbot window */}
       <div
-        className={`fixed z-50 bottom-0 right-0 w-full max-w-xs md:max-w-sm lg:max-w-md h-[60vh] md:h-[70vh] bg-white shadow-2xl border-t md:border-t-0 md:border-l border-gray-200 rounded-t-2xl md:rounded-l-2xl flex flex-col transition-transform duration-300 ${open ? 'translate-y-0' : 'translate-y-full md:translate-x-full'} md:translate-y-0 md:translate-x-0`}
+        className={`fixed z-50 bottom-0 right-0 w-full sm:max-w-xs md:max-w-sm lg:max-w-md h-[70vh] sm:h-[60vh] md:h-[70vh] bg-white shadow-2xl border-t sm:border-t-0 sm:border-l border-gray-200 rounded-t-2xl sm:rounded-l-2xl flex flex-col transition-transform duration-300 ${
+          open ? 'translate-y-0' : 'translate-y-full sm:translate-x-full'
+        } sm:translate-y-0 sm:translate-x-0`}
         style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white rounded-t-2xl md:rounded-t-none md:rounded-l-2xl">
+        <div className="flex items-center justify-between px-3 sm:px-4 py-3 bg-blue-600 text-white rounded-t-2xl sm:rounded-t-none sm:rounded-l-2xl">
           <div className="flex items-center gap-2">
-            <span className="font-bold">{BOT_NAME}</span>
+            <span className="font-bold text-sm sm:text-base">{BOT_NAME}</span>
           </div>
-          <button className="text-white hover:text-gray-200" onClick={() => setOpen(false)} aria-label="Close Chatbot">
-            <span className="material-icons">close</span>
+          <button 
+            className="text-white hover:text-gray-200 p-1" 
+            onClick={() => setOpen(false)} 
+            aria-label="Close Chatbot"
+          >
+            <span className="material-icons text-lg sm:text-xl">close</span>
           </button>
         </div>
+        
         {/* Chat body */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 bg-gradient-to-br from-gray-50 via-white to-blue-50" style={{ fontSize: 16 }}>
+        <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-3 sm:py-4 bg-gradient-to-br from-gray-50 via-white to-blue-50" style={{ fontSize: '14px', lineHeight: '1.4' }}>
           {messages.map((msg, idx) => (
-            <div key={idx} className={`mb-3 flex ${msg.sender === (user?.name || 'You') ? 'justify-end' : 'justify-start'}`}> 
-              <div className={`relative px-4 py-3 max-w-[85%] shadow-md rounded-2xl transition-all
+            <div key={idx} className={`mb-2 sm:mb-3 flex ${msg.sender === (user?.name || 'You') ? 'justify-end' : 'justify-start'}`}> 
+              <div className={`relative px-3 sm:px-4 py-2 sm:py-3 max-w-[85%] shadow-md rounded-2xl transition-all
                 ${msg.sender === (user?.name || 'You')
                   ? 'bg-blue-600 text-white rounded-br-sm'
                   : 'bg-white text-gray-900 border border-blue-100 rounded-bl-sm'}
@@ -121,17 +147,20 @@ const Chatbot: React.FC<ChatbotProps> = ({ user }) => {
                 <span className="block font-semibold text-xs mb-1 opacity-70">
                   {msg.sender === (user?.name || 'You') ? 'You' : BOT_NAME}
                 </span>
-                <span style={{ wordBreak: 'break-word', whiteSpace: 'pre-line' }}>{msg.text}</span>
+                <span style={{ wordBreak: 'break-word', whiteSpace: 'pre-line', fontSize: '13px', lineHeight: '1.4' }}>
+                  {msg.text}
+                </span>
               </div>
             </div>
           ))}
           <div ref={chatEndRef} />
         </div>
+        
         {/* Input */}
-        <form className="flex items-center gap-2 px-4 py-3 border-t bg-white" onSubmit={handleSend}>
+        <form className="flex items-center gap-2 px-3 sm:px-4 py-3 border-t bg-white" onSubmit={handleSend}>
           <input
             type="text"
-            className="flex-1 rounded-full border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="flex-1 rounded-full border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
             placeholder="Type your message..."
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -140,7 +169,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ user }) => {
           />
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 py-2 font-semibold focus:outline-none"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 sm:px-4 py-2 font-semibold focus:outline-none text-sm whitespace-nowrap"
             disabled={!input.trim()}
           >
             Send

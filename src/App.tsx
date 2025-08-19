@@ -18,6 +18,7 @@ import MicroWarehouse from './pages/MicroWarehouse';
 import Alerts from './pages/Alerts';
 import Profile from './pages/Profile';
 import Chatbot from './components/Chatbot';
+import { apiService, getAuthToken } from './services/api';
 
 // Global alert interface
 export interface Alert {
@@ -53,9 +54,9 @@ export const AlertContext = React.createContext<{
 // Component to conditionally render navbar
 const AppContent = ({ isAuthenticated, user, onLogout, onLogin }: {
   isAuthenticated: boolean;
-  user: { name: string; email: string } | null;
+  user: { name: string; email: string; avatarUrl?: string | null } | null;
   onLogout: () => void;
-  onLogin: (userData: { name: string; email: string }) => void;
+  onLogin: (userData: { name: string; email: string; avatarUrl?: string | null }) => void;
 }) => {
   const location = useLocation();
   const isAuthPage = location.pathname === '/signup' || location.pathname === '/signin';
@@ -122,45 +123,62 @@ const AppContent = ({ isAuthenticated, user, onLogout, onLogin }: {
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; avatarUrl?: string | null } | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
-    // Check for existing authentication on app load
-    const savedAuth = localStorage.getItem('isAuthenticated');
-    const savedUser = localStorage.getItem('user');
-    const savedAlerts = localStorage.getItem('alerts');
-    
-    if (savedAuth === 'true' && savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setIsAuthenticated(true);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing saved user data:', error);
-        // Clear invalid data
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('user');
+    const checkAuth = async () => {
+      const startTime = Date.now();
+      const token = getAuthToken();
+      
+      if (token) {
+        try {
+          // Verify token with backend
+          const user = await apiService.getCurrentUser();
+          setIsAuthenticated(true);
+          setUser({
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            avatarUrl: localStorage.getItem('avatarPreview') || null,
+          });
+          // Persist auth-related meta for profile stats
+          if (user.createdAt) localStorage.setItem('userCreatedAt', user.createdAt);
+          if (user.lastLogin) localStorage.setItem('lastLogin', user.lastLogin);
+        } catch (error) {
+          console.error('Token validation failed:', error);
+          // Clear invalid token
+          localStorage.removeItem('token');
+          localStorage.removeItem('isAuthenticated');
+          localStorage.removeItem('user');
+        }
       }
-    }
 
-    // Load saved alerts
-    if (savedAlerts) {
-      try {
-        const parsedAlerts = JSON.parse(savedAlerts);
-        setAlerts(parsedAlerts);
-      } catch (error) {
-        console.error('Error parsing saved alerts:', error);
-        localStorage.removeItem('alerts');
+      // Load saved alerts
+      const savedAlerts = localStorage.getItem('alerts');
+      if (savedAlerts) {
+        try {
+          const parsedAlerts = JSON.parse(savedAlerts);
+          setAlerts(parsedAlerts);
+        } catch (error) {
+          console.error('Error parsing saved alerts:', error);
+          localStorage.removeItem('alerts');
+        }
       }
-    }
 
-    // Simulate loading time
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
+      // Ensure minimum loading time of 2 seconds
+      const elapsedTime = Date.now() - startTime;
+      const minLoadingTime = 2000; // 2 seconds
+      
+      if (elapsedTime < minLoadingTime) {
+        setTimeout(() => {
+          setIsLoading(false);
+        }, minLoadingTime - elapsedTime);
+      } else {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    checkAuth();
   }, []);
 
   // Save alerts to localStorage whenever they change
@@ -192,7 +210,7 @@ function App() {
 
   const unreadCount = alerts.filter(alert => !alert.read).length;
 
-  const handleLogin = (userData: { name: string; email: string }) => {
+  const handleLogin = (userData: { name: string; email: string; avatarUrl?: string | null }) => {
     setIsAuthenticated(true);
     setUser(userData);
     
@@ -201,15 +219,21 @@ function App() {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    setAlerts([]); // Clear alerts on logout
-    
-    // Clear from localStorage
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    localStorage.removeItem('alerts');
+  const handleLogout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsAuthenticated(false);
+      setUser(null);
+      setAlerts([]); // Clear alerts on logout
+      
+      // Clear from localStorage
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('user');
+      localStorage.removeItem('alerts');
+    }
   };
 
   if (isLoading) {

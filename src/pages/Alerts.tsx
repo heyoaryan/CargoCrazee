@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Bell, 
@@ -13,7 +13,8 @@ import {
   Eye,
   Archive,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { AlertContext } from '../App';
 
@@ -21,8 +22,16 @@ const Alerts = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAlert, setSelectedAlert] = useState<number | null>(null);
+  const [showAlertDetail, setShowAlertDetail] = useState<number | null>(null);
   
   const { alerts, markAsRead, archiveAlert, deleteAlert } = useContext(AlertContext);
+
+  // Persist alerts locally so they survive refresh
+  useEffect(() => {
+    try {
+      localStorage.setItem('alerts', JSON.stringify(alerts));
+    } catch {}
+  }, [alerts]);
 
   const filters = [
     { id: 'all', label: 'All Alerts', count: alerts.length },
@@ -42,10 +51,20 @@ const Alerts = () => {
 
     const matchesSearch = alert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          alert.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         alert.shipmentId.toLowerCase().includes(searchTerm.toLowerCase());
+                         (alert.shipmentId || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     return matchesFilter && matchesSearch;
   });
+
+  const handleAlertClick = (alertId: number) => {
+    // Mark as read when clicked
+    if (!alerts.find(a => a.id === alertId)?.read) {
+      markAsRead(alertId);
+    }
+    
+    // Ensure only one open at a time
+    setShowAlertDetail(prev => (prev === alertId ? null : alertId));
+  };
 
   const getAlertIcon = (type: string) => {
     switch (type) {
@@ -162,9 +181,10 @@ const Alerts = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 sm:p-6 ${
+                className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 sm:p-6 cursor-pointer ${
                   !alert.read ? 'border-l-4 border-blue-500' : ''
-                }`}
+                } ${showAlertDetail === alert.id ? 'ring-2 ring-blue-500' : ''}`}
+                onClick={() => handleAlertClick(alert.id)}
               >
                 <div className="flex items-start space-x-3 sm:space-x-4">
                   {/* Alert Icon */}
@@ -195,7 +215,10 @@ const Alerts = () => {
                         <div className="relative">
                           <button 
                             className="p-1 hover:bg-gray-100 rounded"
-                            onClick={() => setSelectedAlert(selectedAlert === alert.id ? null : alert.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAlert(selectedAlert === alert.id ? null : alert.id);
+                            }}
                           >
                             <MoreVertical className="h-4 w-4 text-gray-400" />
                           </button>
@@ -209,8 +232,9 @@ const Alerts = () => {
                               className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
                             >
                               <button
-                                onClick={() => {
-                                  markAsRead(alert.id);
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAlertClick(alert.id);
                                   setSelectedAlert(null);
                                 }}
                                 className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200 w-full text-left text-sm"
@@ -219,7 +243,8 @@ const Alerts = () => {
                                 <span>View</span>
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   archiveAlert(alert.id);
                                   setSelectedAlert(null);
                                 }}
@@ -229,7 +254,8 @@ const Alerts = () => {
                                 <span>Archive</span>
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   deleteAlert(alert.id);
                                   setSelectedAlert(null);
                                 }}
@@ -252,20 +278,79 @@ const Alerts = () => {
 
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                       <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <Package className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                          <span className="truncate">{alert.shipmentId}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Truck className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                          <span className="truncate">{alert.route}</span>
-                        </div>
+                        {!!alert.shipmentId && (
+                          <div className="flex items-center space-x-1">
+                            <Package className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                            <span className="truncate">{alert.shipmentId}</span>
+                          </div>
+                        )}
+                        {!!alert.route && (
+                          <div className="flex items-center space-x-1">
+                            <Truck className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                            <span className="truncate">{alert.route}</span>
+                          </div>
+                        )}
                         <div className="flex items-center space-x-1">
                           <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                           <span>{alert.time}</span>
                         </div>
                       </div>
                     </div>
+
+                    {/* Expanded Alert Details */}
+                    {showAlertDetail === alert.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 pt-4 border-t border-gray-200"
+                      >
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <h4 className="font-semibold text-gray-800 mb-2">Alert Details</h4>
+                              <div className="space-y-1 text-gray-600">
+                                <div><strong>Type:</strong> {alert.type.charAt(0).toUpperCase() + alert.type.slice(1)}</div>
+                                <div><strong>Priority:</strong> {alert.priority.charAt(0).toUpperCase() + alert.priority.slice(1)}</div>
+                                <div><strong>Status:</strong> {alert.status.charAt(0).toUpperCase() + alert.status.slice(1)}</div>
+                                <div><strong>Time:</strong> {alert.time}</div>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-800 mb-2">Delivery Info</h4>
+                              <div className="space-y-1 text-gray-600">
+                                {!!alert.shipmentId && (<div><strong>Shipment ID:</strong> {alert.shipmentId}</div>)}
+                                {!!alert.route && (<div><strong>Route:</strong> {alert.route}</div>)}
+                                <div><strong>Read Status:</strong> {alert.read ? 'Read' : 'Unread'}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 flex space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                archiveAlert(alert.id);
+                                setShowAlertDetail(null);
+                              }}
+                              className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors"
+                            >
+                              Archive
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteAlert(alert.id);
+                                setShowAlertDetail(null);
+                              }}
+                              className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -345,7 +430,7 @@ const Alerts = () => {
           >
             <div className="inline-block bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl px-6 py-3 shadow-lg">
               <p className="text-gray-600 text-xs sm:text-sm font-medium">
-                Real-time Alerts • Smart Notifications • Delivery Updates • Performance Insights
+                Real-time Alerts • Smart Notifications • Delivery Updates • Performance Insights • Auto-Read Messages
               </p>
             </div>
           </motion.div>

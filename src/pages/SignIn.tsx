@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, LogIn, MapPin, BarChart3, Package, CheckCircle, Users, Shield, Clock } from 'lucide-react';
+import { apiService } from '../services/api';
 
 interface SignInProps {
   onSignIn: (userData: { name: string; email: string }) => void;
@@ -15,6 +16,8 @@ const SignIn = ({ onSignIn }: SignInProps) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [generalError, setGeneralError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -23,9 +26,12 @@ const SignIn = ({ onSignIn }: SignInProps) => {
       [name]: type === 'checkbox' ? checked : value 
     }));
     
-    // Clear error when user starts typing
+    // Clear errors when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    if (generalError) {
+      setGeneralError('');
     }
   };
 
@@ -40,16 +46,34 @@ const SignIn = ({ onSignIn }: SignInProps) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Simulate different user names based on email
-      const name = formData.email.includes('demo') ? 'Demo User' : 'John Doe';
-      onSignIn({
-        name,
-        email: formData.email,
-      });
+      setIsLoading(true);
+      setGeneralError('');
+      
+      try {
+        const response = await apiService.login({
+          email: formData.email,
+          password: formData.password,
+        });
+        
+        if (response.success && response.user) {
+          onSignIn({
+            name: `${response.user.firstName} ${response.user.lastName}`,
+            email: response.user.email,
+          });
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          setGeneralError(error.message);
+        } else {
+          setGeneralError('Login failed. Please try again.');
+        }
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -69,39 +93,50 @@ const SignIn = ({ onSignIn }: SignInProps) => {
       exit={{ opacity: 0 }}
       className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start">
           {/* Left Side - Form */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}
-            className="bg-white rounded-2xl shadow-xl p-8"
+            className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 order-2 lg:order-1"
           >
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2 font-poppins">
+            <div className="text-center mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 font-poppins">
                 Welcome Back to CargoCrazee
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 Continue optimizing your logistics operations
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              {/* General Error */}
+              {generalError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4"
+                >
+                  <p className="text-sm text-red-600">{generalError}</p>
+                </motion.div>
+              )}
+              
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   <motion.input
                     whileFocus={{ scale: 1.02 }}
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    className={`w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                       errors.email ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="your@email.com"
@@ -124,14 +159,14 @@ const SignIn = ({ onSignIn }: SignInProps) => {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   <motion.input
                     whileFocus={{ scale: 1.02 }}
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-12 py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    className={`w-full pl-9 sm:pl-10 pr-12 py-3 sm:py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                       errors.password ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Your password"
@@ -141,7 +176,7 @@ const SignIn = ({ onSignIn }: SignInProps) => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
                   </button>
                 </div>
                 {errors.password && (
@@ -156,7 +191,7 @@ const SignIn = ({ onSignIn }: SignInProps) => {
               </div>
 
               {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -178,31 +213,31 @@ const SignIn = ({ onSignIn }: SignInProps) => {
               {/* Submit Button */}
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-gradient-to-r from-blue-500 to-green-400 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 flex items-center justify-center space-x-2"
+                disabled={isLoading}
+                whileHover={!isLoading ? { scale: 1.02 } : {}}
+                whileTap={!isLoading ? { scale: 0.98 } : {}}
+                className={`w-full px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base ${
+                  isLoading 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-500 to-green-400 text-white hover:from-blue-600 hover:to-green-500'
+                }`}
               >
-                <LogIn className="h-5 w-5" />
-                <span>Sign In</span>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+                    <span>Signing In...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span>Sign In</span>
+                  </>
+                )}
               </motion.button>
             </form>
 
-            {/* Demo Credentials */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="mt-6 p-4 bg-gray-50 rounded-lg"
-            >
-              <p className="text-sm text-gray-600 mb-2">Demo credentials:</p>
-              <div className="text-xs text-gray-500 space-y-1">
-                <div>Email: demo@CargoCrazee.com</div>
-                <div>Password: demo123</div>
-              </div>
-            </motion.div>
-
-            <div className="mt-8 text-center">
-              <p className="text-gray-600">
+            <div className="mt-6 sm:mt-8 text-center">
+              <p className="text-sm sm:text-base text-gray-600">
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200">
                   Sign Up
@@ -216,7 +251,7 @@ const SignIn = ({ onSignIn }: SignInProps) => {
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8 order-1 lg:order-2"
           >
             <div className="text-center">
               <motion.div
@@ -229,23 +264,23 @@ const SignIn = ({ onSignIn }: SignInProps) => {
                   repeat: Infinity,
                   ease: "easeInOut" 
                 }}
-                className="w-32 h-32 bg-gradient-to-r from-blue-500 to-green-400 rounded-full mx-auto mb-6 flex items-center justify-center"
+                className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-blue-500 to-green-400 rounded-full mx-auto mb-4 sm:mb-6 flex items-center justify-center"
               >
-                <Package className="h-16 w-16 text-white" />
+                <Package className="h-12 w-12 sm:h-16 sm:w-16 text-white" />
               </motion.div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-4 font-poppins">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 sm:mb-4 font-poppins">
                 Welcome Back to Delhi's Smart Logistics
               </h2>
-              <p className="text-xl text-gray-600">
+              <p className="text-lg sm:text-xl text-gray-600">
                 Continue optimizing your delivery operations with AI-powered solutions
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-xl font-semibold text-gray-800 mb-6">
+            <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">
                 Your platform benefits:
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {benefits.map((benefit, index) => (
                   <motion.div
                     key={index}
@@ -254,33 +289,10 @@ const SignIn = ({ onSignIn }: SignInProps) => {
                     transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
                     className="flex items-center space-x-3"
                   >
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{benefit}</span>
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm sm:text-base text-gray-700">{benefit}</span>
                   </motion.div>
                 ))}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-blue-100 to-green-100 rounded-2xl p-8 text-center">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Your logistics dashboard awaits
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Join 500+ Delhi MSMEs already optimizing their operations
-              </p>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">500+</div>
-                  <div className="text-sm text-gray-600">Active Users</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">30%</div>
-                  <div className="text-sm text-gray-600">Cost Savings</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-purple-600">24/7</div>
-                  <div className="text-sm text-gray-600">Support</div>
-                </div>
               </div>
             </div>
           </motion.div>

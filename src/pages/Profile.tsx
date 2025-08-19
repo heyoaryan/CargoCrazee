@@ -17,8 +17,8 @@ import {
 import { AlertContext } from '../App';
 
 interface ProfileProps {
-  user?: { name: string; email: string } | null;
-  onUserUpdate?: (userData: { name: string; email: string }) => void;
+  user?: { name: string; email: string; avatarUrl?: string | null } | null;
+  onUserUpdate?: (userData: { name: string; email: string; avatarUrl?: string | null }) => void;
 }
 
 const Profile = ({ user, onUserUpdate }: ProfileProps) => {
@@ -26,15 +26,16 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null);
+  const [isEditingSecurity, setIsEditingSecurity] = useState(false);
   
   const { addAlert } = useContext(AlertContext);
 
   // Load saved profile data from localStorage
   const [profileData, setProfileData] = useState({
-    name: user?.name || 'John Doe',
-    email: user?.email || 'john.doe@example.com',
-    businessName: 'Delhi Logistics Co.',
+    name: user?.name || '',
+    email: user?.email || '',
+    businessName: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -80,21 +81,10 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
       onUserUpdate({
         name: profileData.name,
         email: profileData.email,
+        avatarUrl: avatarPreview || null,
       });
     }
 
-    // Simulate saving
-    addAlert({
-      type: 'success',
-      title: 'Profile Updated Successfully!',
-      message: 'Your profile information has been saved successfully.',
-      time: 'Just now',
-      status: 'active',
-      priority: 'low',
-      shipmentId: 'Profile',
-      route: 'Settings',
-      read: false,
-    });
     setIsEditing(false);
   };
 
@@ -105,8 +95,6 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setAvatarPreview(e.target?.result as string);
-        // Save avatar to localStorage
-        localStorage.setItem('avatarPreview', e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -115,27 +103,60 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // File uploaded silently
+    }
+  };
+
+  // Document types for one-by-one uploads
+  const documentTypes: { key: string; label: string }[] = [
+    { key: 'gstCertificate', label: 'GST Certificate' },
+    { key: 'companyPan', label: 'Company PAN' },
+    { key: 'incorporationCertificate', label: 'Certificate of Incorporation' },
+    { key: 'addressProof', label: 'Registered Address Proof' },
+    { key: 'bankProof', label: 'Cancelled Cheque / Bank Proof' },
+  ];
+
+  const [selectedDocs, setSelectedDocs] = useState<Record<string, File | null>>({});
+
+  const onSelectDocument = (key: string, file: File | null) => {
+    setSelectedDocs(prev => ({ ...prev, [key]: file }));
+  };
+
+  const onUploadDocument = async (key: string) => {
+    const file = selectedDocs[key];
+    if (!file) return;
+    try {
+      // TODO: Replace with real API call when backend endpoint is available
+      await new Promise(res => setTimeout(res, 600));
       addAlert({
         type: 'success',
-        title: 'Document Uploaded Successfully!',
-        message: `${file.name} has been uploaded to your profile.`,
-        time: 'Just now',
-        status: 'active',
+        title: 'Document Uploaded',
+        message: `${documentTypes.find(d => d.key === key)?.label} uploaded: ${file.name}`,
+        time: new Date().toISOString(),
+        status: 'completed',
         priority: 'low',
-        shipmentId: 'Document',
-        route: 'Profile',
+        shipmentId: '-',
+        route: '-',
+        read: false,
+      });
+      setSelectedDocs(prev => ({ ...prev, [key]: null }));
+      const currentCount = Number(localStorage.getItem('uploadedDocuments') || '0');
+      localStorage.setItem('uploadedDocuments', String(currentCount + 1));
+    } catch (e) {
+      console.error(e);
+      addAlert({
+        type: 'error',
+        title: 'Upload Failed',
+        message: `Could not upload ${documentTypes.find(d => d.key === key)?.label}. Please try again.`,
+        time: new Date().toISOString(),
+        status: 'pending',
+        priority: 'medium',
+        shipmentId: '-',
+        route: '-',
         read: false,
       });
     }
   };
-
-  // Load saved avatar on component mount
-  useEffect(() => {
-    const savedAvatar = localStorage.getItem('avatarPreview');
-    if (savedAvatar) {
-      setAvatarPreview(savedAvatar);
-    }
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,9 +181,9 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="lg:col-span-2 space-y-6"
+              className="order-2 lg:order-1 lg:col-span-2 space-y-6"
             >
-              {/* Basic Information */}
+              {/* Basic Information (order-2 on mobile, after avatar) */}
               <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-3 sm:space-y-0">
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Basic Information</h2>
@@ -224,11 +245,20 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                 </div>
               </div>
 
-              {/* Security Settings */}
+              {/* Security Settings (order-3 on mobile) */}
               <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-                <div className="flex items-center space-x-2 mb-6">
-                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Security Settings</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Security Settings</h2>
+                  </div>
+                  <button
+                    onClick={() => setIsEditingSecurity(!isEditingSecurity)}
+                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="text-sm font-medium">{isEditingSecurity ? 'Cancel' : 'Edit'}</span>
+                  </button>
                 </div>
 
                 <div className="space-y-4">
@@ -242,13 +272,15 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                         name="currentPassword"
                         value={profileData.currentPassword}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                        disabled={!isEditingSecurity}
+                        className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-50"
                         placeholder="Enter current password"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                        onClick={() => isEditingSecurity && setShowPassword(!showPassword)}
+                        disabled={!isEditingSecurity}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />}
                       </button>
@@ -265,13 +297,15 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                         name="newPassword"
                         value={profileData.newPassword}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                        disabled={!isEditingSecurity}
+                        className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-50"
                         placeholder="Enter new password"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                        onClick={() => isEditingSecurity && setShowNewPassword(!showNewPassword)}
+                        disabled={!isEditingSecurity}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {showNewPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />}
                       </button>
@@ -287,50 +321,77 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                       name="confirmPassword"
                       value={profileData.confirmPassword}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                      disabled={!isEditingSecurity}
+                      className="w-full px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-50"
                       placeholder="Confirm new password"
                     />
                   </div>
 
-                  <button className="bg-gradient-to-r from-blue-500 to-green-400 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 w-full sm:w-auto">
-                    Update Password
-                  </button>
+                  {isEditingSecurity && (
+                    <button className="bg-gradient-to-r from-blue-500 to-green-400 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 w-full sm:w-auto">
+                      Update Password
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Document Upload */}
+              {/* Company Documents (order-4 on mobile) */}
               <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
                 <div className="flex items-center space-x-2 mb-6">
                   <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Document Upload</h2>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Company Documents</h2>
                 </div>
 
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center">
-                  <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-2">Upload Documents</h3>
-                  <p className="text-sm sm:text-base text-gray-500 mb-4">Upload business documents, licenses, or other important files</p>
-                  <input
-                    type="file"
-                    onChange={handleDocumentUpload}
-                    className="hidden"
-                    id="document-upload"
-                    multiple
-                  />
-                  <label
-                    htmlFor="document-upload"
-                    className="bg-gradient-to-r from-blue-500 to-green-400 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-green-500 transition-all duration-200 cursor-pointer inline-block"
-                  >
-                    Choose Files
-                  </label>
+                <div className="space-y-4">
+                  {documentTypes.map(doc => (
+                    <div key={doc.key} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Upload className="h-4 w-4 text-gray-500" />
+                          <div>
+                            <div className="text-sm sm:text-base font-medium text-gray-800">{doc.label}</div>
+                            <div className="text-xs text-gray-500">Upload a clear PDF or image</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="file"
+                            id={`doc-${doc.key}`}
+                            className="hidden"
+                            onChange={(e) => onSelectDocument(doc.key, e.target.files?.[0] || null)}
+                            accept=".pdf,image/*"
+                          />
+                          <label
+                            htmlFor={`doc-${doc.key}`}
+                            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-200 cursor-pointer"
+                          >
+                            Choose
+                          </label>
+                          <button
+                            onClick={() => onUploadDocument(doc.key)}
+                            disabled={!selectedDocs[doc.key]}
+                            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Upload
+                          </button>
+                        </div>
+                      </div>
+                      {selectedDocs[doc.key] && (
+                        <div className="mt-2 text-xs text-gray-600">
+                          Selected: <span className="font-medium">{selectedDocs[doc.key]?.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.div>
 
-            {/* Avatar Section */}
+            {/* Avatar - placed first on mobile */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
+              className="order-1 lg:order-2"
             >
               {/* Avatar */}
               <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
@@ -372,28 +433,45 @@ const Profile = ({ user, onUserUpdate }: ProfileProps) => {
                   <p className="text-xs sm:text-sm text-gray-500">
                     {isEditing ? 'Click the camera icon to change your profile picture' : 'Profile picture can only be changed in edit mode'}
                   </p>
+                  {avatarPreview && isEditing && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => setAvatarPreview(null)}
+                        className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-100"
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Account Stats */}
+            </motion.div>
+
+            {/* Account Stats - separate so it appears after info on mobile */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="order-4 lg:order-2"
+            >
               <div className="bg-gradient-to-r from-blue-600 to-green-500 rounded-2xl p-4 sm:p-6 text-white">
                 <h3 className="text-base sm:text-lg font-semibold mb-4">Account Statistics</h3>
                 <div className="space-y-3 text-sm sm:text-base">
                   <div className="flex justify-between">
                     <span>Member Since</span>
-                    <span className="font-medium">March 2024</span>
+                    <span className="font-medium">{new Date(localStorage.getItem('userCreatedAt') || Date.now()).toLocaleDateString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Total Deliveries</span>
-                    <span className="font-medium">247</span>
+                    <span className="font-medium">{localStorage.getItem('totalDeliveries') || '0'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Documents</span>
-                    <span className="font-medium">12</span>
+                    <span className="font-medium">{localStorage.getItem('uploadedDocuments') || '0'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Last Login</span>
-                    <span className="font-medium">Today</span>
+                    <span className="font-medium">{new Date(localStorage.getItem('lastLogin') || Date.now()).toLocaleString()}</span>
                   </div>
                 </div>
               </div>

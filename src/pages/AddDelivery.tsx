@@ -115,6 +115,14 @@ const AddDelivery = () => {
     localStorage.setItem('addDeliveryFormData', JSON.stringify(formData));
   }, [formData]);
 
+  // Invalidate AI data when addresses change so distance recalculates instead of staying stale
+  useEffect(() => {
+    if (aiData) {
+      setAiData(null);
+      setShowAISuggestions(false);
+    }
+  }, [formData.pickupAddress, formData.deliveryAddress]);
+
   useEffect(() => {
     localStorage.setItem('addDeliveryShowPackageName', JSON.stringify(showPackageName));
   }, [showPackageName]);
@@ -126,14 +134,58 @@ const AddDelivery = () => {
     try {
       setIsLoadingAI(true);
       
-      // Use real coordinates from Delhi industrial hubs
-      const origin = { lat: 28.6139, lon: 77.2090 }; // Delhi center
-      const destination = { lat: 28.4595, lon: 77.0266 }; // Another Delhi location
-      
+      const hubsResp = await apiService.getIndustrialHubs().catch(() => null);
+      const hubEntries: Array<{ name: string; coordinates: { lat: number; lon: number } }> = hubsResp?.hubs
+        ? Object.values(hubsResp.hubs)
+        : [];
+
+      const findCoordsForAddress = (address: string | undefined | null) => {
+        if (!address) return null;
+        const lower = address.toLowerCase();
+        for (const hub of hubEntries as any[]) {
+          if (lower.includes((hub.name || '').toLowerCase())) {
+            return hub.coordinates;
+          }
+        }
+        return null;
+      };
+
+      // Determine coordinates:
+      // 1) Prefer known industrial hub coordinates if the address contains a hub name
+      // 2) Otherwise geocode the free-form address via OSM Nominatim
+      // 3) Finally, fall back to Delhi center and Gurgaon only if geocoding fails
+      let originCoords = findCoordsForAddress(formData.pickupAddress);
+      if (!originCoords && formData.pickupAddress) {
+        const geo = await apiService.geocodeAddress(formData.pickupAddress);
+        if (geo) originCoords = geo as any;
+      }
+
+      let destinationCoords = findCoordsForAddress(formData.deliveryAddress);
+      if (!destinationCoords && formData.deliveryAddress) {
+        const geo = await apiService.geocodeAddress(formData.deliveryAddress);
+        if (geo) destinationCoords = geo as any;
+      }
+
+      // If we still don't have valid coordinates, do not use defaults; notify and abort
+      if (!originCoords || !destinationCoords) {
+        addAlert({
+          type: 'warning',
+          title: 'Location Not Found',
+          message: 'Could not resolve pickup/delivery location. Please enter more specific addresses.',
+          time: 'Just now',
+          status: 'active',
+          priority: 'high',
+          shipmentId: '',
+          route: '',
+          read: false,
+        });
+        return;
+      }
+
       // Get real AI analysis from Python service
       const routeData = await apiService.optimizeRoute({
-        origin,
-        destination,
+        origin: originCoords,
+        destination: destinationCoords,
         departure_time: formData.deliveryDate ? new Date(formData.deliveryDate).toISOString() : undefined
       });
       
@@ -146,7 +198,7 @@ const AddDelivery = () => {
       setShowAISuggestions(true);
     } catch (error) {
       console.error('AI service error:', error);
-      // Do not use mock AI data; just notify and proceed without it
+      // Do not use defaults or mock AI data; just notify and proceed without it
       setAiData(null);
       addAlert({
         type: 'warning',

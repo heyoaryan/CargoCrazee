@@ -347,12 +347,12 @@ const AddDelivery = () => {
   ];
 
   const packageTypes = [
-    'Documents',
-    'Electronics',
-    'Clothing',
-    'Food Items',
-    'Fragile Items',
-    'Other',
+            'Furniture',
+        'Electronics',
+        'Clothing',
+        'Food Items',
+        'Fragile Items',
+        'Other',
   ];
 
   const sanitizeIndianPhoneInput = (raw: string) => {

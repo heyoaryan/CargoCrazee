@@ -28,7 +28,7 @@ router.post('/', [
     .isLength({ min: 10, max: 500 })
     .withMessage('Delivery address must be between 10 and 500 characters'),
   body('package.type')
-    .isIn(['Documents', 'Electronics', 'Clothing', 'Food Items', 'Fragile Items', 'Other'])
+    .isIn(['Furniture', 'Electronics', 'Clothing', 'Food Items', 'Fragile Items', 'Other'])
     .withMessage('Please select a valid package type'),
   body('package.weight')
     .isFloat({ min: 0.1 })

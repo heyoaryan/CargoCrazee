@@ -62,7 +62,7 @@ const deliverySchema = new mongoose.Schema({
     type: {
       type: String,
       required: [true, 'Package type is required'],
-      enum: ['Documents', 'Electronics', 'Clothing', 'Food Items', 'Fragile Items', 'Other']
+      enum: ['Furniture', 'Electronics', 'Clothing', 'Food Items', 'Fragile Items', 'Other']
     },
     name: {
       type: String,

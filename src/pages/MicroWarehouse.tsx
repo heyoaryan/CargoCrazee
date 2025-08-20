@@ -470,12 +470,12 @@ const MicroWarehouse = () => {
                       required
                     >
                       <option value="">Select package type</option>
-                      <option value="Electronics">Electronics</option>
-                      <option value="Clothing">Clothing</option>
-                      <option value="Food Items">Food Items</option>
-                      <option value="Documents">Documents</option>
-                      <option value="Fragile Items">Fragile Items</option>
-                      <option value="Other">Other</option>
+                              <option value="Furniture">Furniture</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Clothing">Clothing</option>
+        <option value="Food Items">Food Items</option>
+        <option value="Fragile Items">Fragile Items</option>
+        <option value="Other">Other</option>
                     </select>
                   </div>
 

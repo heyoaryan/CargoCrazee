@@ -134,10 +134,6 @@ const AddDelivery = () => {
     try {
       setIsLoadingAI(true);
       
-      // Resolve coordinates from selected industrial areas (avoid hardcoded coords)
-      const defaultOrigin = { lat: 28.6139, lon: 77.2090 };
-      const defaultDestination = { lat: 28.4595, lon: 77.0266 };
-
       const hubsResp = await apiService.getIndustrialHubs().catch(() => null);
       const hubEntries: Array<{ name: string; coordinates: { lat: number; lon: number } }> = hubsResp?.hubs
         ? Object.values(hubsResp.hubs)
@@ -163,14 +159,28 @@ const AddDelivery = () => {
         const geo = await apiService.geocodeAddress(formData.pickupAddress);
         if (geo) originCoords = geo as any;
       }
-      if (!originCoords) originCoords = defaultOrigin;
 
       let destinationCoords = findCoordsForAddress(formData.deliveryAddress);
       if (!destinationCoords && formData.deliveryAddress) {
         const geo = await apiService.geocodeAddress(formData.deliveryAddress);
         if (geo) destinationCoords = geo as any;
       }
-      if (!destinationCoords) destinationCoords = defaultDestination;
+
+      // If we still don't have valid coordinates, do not use defaults; notify and abort
+      if (!originCoords || !destinationCoords) {
+        addAlert({
+          type: 'warning',
+          title: 'Location Not Found',
+          message: 'Could not resolve pickup/delivery location. Please enter more specific addresses.',
+          time: 'Just now',
+          status: 'active',
+          priority: 'high',
+          shipmentId: '',
+          route: '',
+          read: false,
+        });
+        return;
+      }
 
       // Get real AI analysis from Python service
       const routeData = await apiService.optimizeRoute({
@@ -188,7 +198,7 @@ const AddDelivery = () => {
       setShowAISuggestions(true);
     } catch (error) {
       console.error('AI service error:', error);
-      // Do not use mock AI data; just notify and proceed without it
+      // Do not use defaults or mock AI data; just notify and proceed without it
       setAiData(null);
       addAlert({
         type: 'warning',

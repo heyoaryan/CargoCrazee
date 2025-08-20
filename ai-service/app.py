@@ -255,25 +255,8 @@ def get_real_route_data(origin: dict, destination: dict, departure_time: str = N
                     }
         except Exception as osrm_err:
             print(f"OSRM fallback error: {osrm_err}")
-
-        # Force Real Delhi Industrial Areas Distance Calculation
-        print(f"🔍 DEBUG: ==========================================")
-        print(f"🔍 DEBUG: FORCING REAL DELHI DISTANCE CALCULATION")
-        print(f"🔍 DEBUG: ==========================================")
-        print(f"🔍 DEBUG: Origin coordinates: {origin}")
-        print(f"🔍 DEBUG: Destination coordinates: {destination}")
-        
-        distance_km, time_minutes = calculate_real_delhi_distance(origin, destination)
-        
-        print(f"🔍 DEBUG: Real Delhi result - Distance: {distance_km} km, Time: {time_minutes} min")
-        print(f"🔍 DEBUG: ==========================================")
-        
-        return {
-            "distance_km": round(distance_km, 2),
-            "estimated_time_minutes": round(time_minutes, 1),
-            "steps": [],
-            "geometry": None
-        }
+        # If both primary and OSRM fallbacks fail, propagate error to caller
+        raise Exception("Routing services unavailable")
 
 def calculate_real_delhi_distance(origin: dict, destination: dict) -> tuple:
     """Calculate real distances between Delhi industrial areas"""
@@ -562,78 +545,9 @@ async def optimize_delivery_route(request: RouteRequest):
         return result
         
     except Exception as e:
-        # Best-effort fallback so UI can still render metrics
-        try:
-            print(f"AI optimization error: {e}")
-            # Fallback weather for both points
-            weather_origin = get_real_weather_data(request.origin.get("lat", 0), request.origin.get("lon", 0))
-            weather_destination = get_real_weather_data(request.destination.get("lat", 0), request.destination.get("lon", 0))
-
-            # Fallback route from lat/lon deltas
-            lat_diff = abs(request.origin.get("lat", 0) - request.destination.get("lat", 0))
-            lon_diff = abs(request.origin.get("lon", 0) - request.destination.get("lon", 0))
-            distance = (lat_diff + lon_diff) * 111
-            route_data = {
-                "distance_km": round(distance, 2),
-                "estimated_time_minutes": round(distance * 2.5, 1),
-                "steps": [],
-                "geometry": None,
-            }
-
-            origin_hub = find_nearest_industrial_hub(request.origin.get("lat", 0), request.origin.get("lon", 0))
-            dest_hub = find_nearest_industrial_hub(request.destination.get("lat", 0), request.destination.get("lon", 0))
-            weather_impact = analyze_weather_impact(weather_origin)
-            ai_suggestions = generate_ai_suggestions(weather_origin, route_data, origin_hub, dest_hub)
-            risk_score = calculate_risk_score(weather_origin, route_data, origin_hub, dest_hub)
-
-            optimization_result = {
-                "optimized_route": {
-                    "distance_km": route_data["distance_km"],
-                    "estimated_time_minutes": route_data["estimated_time_minutes"],
-                    "weather_impact": weather_impact,
-                    "recommendations": ai_suggestions[:3]
-                },
-                "ai_suggestions": ai_suggestions,
-                "risk_score": risk_score,
-                "confidence": 0.7
-            }
-
-            hub_info = {}
-            if origin_hub:
-                hub_info["origin_hub"] = {
-                    "name": origin_hub["name"],
-                    "type": origin_hub["type"],
-                    "traffic_level": origin_hub["traffic_level"],
-                    "peak_hours": origin_hub["peak_hours"],
-                }
-            if dest_hub:
-                hub_info["destination_hub"] = {
-                    "name": dest_hub["name"],
-                    "type": dest_hub["type"],
-                    "traffic_level": dest_hub["traffic_level"],
-                    "peak_hours": dest_hub["peak_hours"],
-                }
-
-            return {
-                "status": "success",
-                "optimization": optimization_result,
-                "weather_context": {
-                    "pickup_location": {"coordinates": request.origin, "weather": weather_origin},
-                    "delivery_location": {"coordinates": request.destination, "weather": weather_destination},
-                    "forecast": weather_destination,
-                    "impact_analysis": "Weather conditions analyzed for optimal routing (fallback)",
-                },
-                "industrial_hubs": hub_info,
-                "ai_insights": {
-                    "route_efficiency": "Fallback route metrics computed",
-                    "risk_assessment": f"Risk score: {risk_score}/100",
-                    "recommendations_count": len(ai_suggestions),
-                    "data_source": "OpenWeather + OSRM/Heuristic",
-                },
-            }
-        except Exception as inner_e:
-            print(f"Fallback assembly error: {inner_e}")
-            raise HTTPException(status_code=500, detail="AI optimization failed")
+        print(f"AI optimization error: {e}")
+        # Propagate a clear error so the frontend does not display heuristic/mocked distances
+        raise HTTPException(status_code=502, detail="AI optimization failed")
 
 @app.get("/industrial-hubs")
 async def get_industrial_hubs():

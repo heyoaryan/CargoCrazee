@@ -402,6 +402,16 @@ class ApiService {
       },
       body: JSON.stringify(params),
     });
+    if (!response.ok) {
+      // Try to parse JSON error to surface a helpful message
+      try {
+        const errJson = await response.json();
+        const message = errJson?.detail || errJson?.message || `AI service error ${response.status}`;
+        throw new Error(message);
+      } catch (_) {
+        throw new Error(`AI service error ${response.status}`);
+      }
+    }
     return await response.json();
   }
 

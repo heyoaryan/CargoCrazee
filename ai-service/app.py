@@ -255,17 +255,75 @@ def get_real_route_data(origin: dict, destination: dict, departure_time: str = N
         except Exception as osrm_err:
             print(f"OSRM fallback error: {osrm_err}")
 
-        # Final numeric fallback based on lat/lon delta
-        lat_diff = abs(origin["lat"] - destination["lat"])
-        lon_diff = abs(origin["lon"] - destination["lon"])
-        distance = (lat_diff + lon_diff) * 111  # Rough km conversion
-
+        # Real Delhi Industrial Areas Distance Calculation
+        distance_km, time_minutes = calculate_real_delhi_distance(origin, destination)
+        
         return {
-            "distance_km": round(distance, 2),
-            "estimated_time_minutes": round(distance * 2.5, 1),
+            "distance_km": round(distance_km, 2),
+            "estimated_time_minutes": round(time_minutes, 1),
             "steps": [],
             "geometry": None
         }
+
+def calculate_real_delhi_distance(origin: dict, destination: dict) -> tuple:
+    """Calculate real distances between Delhi industrial areas"""
+    
+    # Get nearest industrial hubs for origin and destination
+    origin_hub = find_nearest_industrial_hub(origin["lat"], origin["lon"])
+    dest_hub = find_nearest_industrial_hub(destination["lat"], destination["lon"])
+    
+    if not origin_hub or not dest_hub:
+        # Fallback to coordinate-based calculation
+        lat_diff = abs(origin["lat"] - destination["lat"])
+        lon_diff = abs(origin["lon"] - destination["lon"])
+        distance = (lat_diff + lon_diff) * 111
+        return distance, distance * 2.5
+    
+    # Real Delhi Industrial Areas Distances (in km)
+    delhi_distances = {
+        # Narela Industrial Area (Base Point)
+        ("Narela Industrial Area", "Okhla Industrial Area"): (48, 65),  # 48 km, 65 min
+        ("Narela Industrial Area", "Bawana Industrial Area"): (11, 20),  # 11 km, 20 min
+        ("Narela Industrial Area", "Mayapuri Industrial Area"): (30, 45),  # 30 km, 45 min
+        ("Narela Industrial Area", "Patparganj Industrial Area"): (40, 55),  # 40 km, 55 min
+        ("Narela Industrial Area", "Kirti Nagar Industrial Area"): (28, 30),  # 28 km, 30 min
+        
+        # Okhla Industrial Area
+        ("Okhla Industrial Area", "Bawana Industrial Area"): (54, 70),  # 54 km, 70 min
+        ("Okhla Industrial Area", "Mayapuri Industrial Area"): (23, 40),  # 23 km, 40 min
+        ("Okhla Industrial Area", "Patparganj Industrial Area"): (15, 30),  # 15 km, 30 min
+        ("Okhla Industrial Area", "Kirti Nagar Industrial Area"): (20, 35),  # 20 km, 35 min
+        
+        # Bawana Industrial Area
+        ("Bawana Industrial Area", "Mayapuri Industrial Area"): (32, 45),  # 32 km, 45 min
+        ("Bawana Industrial Area", "Patparganj Industrial Area"): (42, 60),  # 42 km, 60 min
+        ("Bawana Industrial Area", "Kirti Nagar Industrial Area"): (30, 40),  # 30 km, 40 min
+        
+        # Mayapuri Industrial Area
+        ("Mayapuri Industrial Area", "Patparganj Industrial Area"): (28, 40),  # 28 km, 40 min
+        ("Mayapuri Industrial Area", "Kirti Nagar Industrial Area"): (10, 20),  # 10 km, 20 min
+        
+        # Patparganj Industrial Area
+        ("Patparganj Industrial Area", "Kirti Nagar Industrial Area"): (18, 30),  # 18 km, 30 min
+    }
+    
+    # Check both directions for the route
+    route_key = (origin_hub["name"], dest_hub["name"])
+    reverse_route_key = (dest_hub["name"], origin_hub["name"])
+    
+    if route_key in delhi_distances:
+        distance, time = delhi_distances[route_key]
+        return distance, time
+    elif reverse_route_key in delhi_distances:
+        distance, time = delhi_distances[reverse_route_key]
+        return distance, time
+    else:
+        # If no specific route found, calculate based on hub coordinates
+        hub_lat_diff = abs(origin_hub["coordinates"]["lat"] - dest_hub["coordinates"]["lat"])
+        hub_lon_diff = abs(origin_hub["coordinates"]["lon"] - dest_hub["coordinates"]["lon"])
+        estimated_distance = (hub_lat_diff + hub_lon_diff) * 111
+        estimated_time = estimated_distance * 1.5  # More realistic time calculation
+        return estimated_distance, estimated_time
 
 def find_nearest_industrial_hub(lat: float, lon: float) -> dict:
     """Find the nearest industrial hub to given coordinates"""

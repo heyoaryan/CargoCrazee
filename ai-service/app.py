@@ -13,11 +13,12 @@ load_dotenv('config.env')
 
 app = FastAPI(title="CargoCrazee AI Service", version="1.0.0")
 
-# CORS setup (allow dynamic origins from env)
-cors_env = os.getenv("CORS_ORIGINS", "").strip()
-allowed_origins = [o.strip() for o in cors_env.split(",") if o.strip()] or [
+# CORS setup - Allow Netlify frontend
+allowed_origins = [
     "http://localhost:5173",
     "http://localhost:3000",
+    "https://cargocrazee.netlify.app",
+    "https://*.netlify.app"
 ]
 
 app.add_middleware(

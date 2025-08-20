@@ -976,7 +976,7 @@ const AddDelivery = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
+            className="space-y-4 sm:space-y-6"
           >
             <h2 className="text-2xl font-bold text-gray-800 mb-6">
               Smart Truck Pooling Preferences & Schedule
@@ -1127,74 +1127,74 @@ const AddDelivery = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-6">AI Analysis & Smart Matching</h2>
 
             {/* 1. AI Route Optimization */}
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 sm:p-6 border border-blue-200">
               <div className="flex items-center space-x-2 mb-4">
                 <Navigation className="h-6 w-6 text-blue-600" />
-                <h3 className="font-semibold text-gray-800 text-lg">AI Route Optimization</h3>
+                <h3 className="font-semibold text-gray-800 text-base sm:text-lg">AI Route Optimization</h3>
               </div>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{computedMetrics.distanceKm || '-'}</div>
-                    <div className="text-sm text-gray-600">km</div>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">{computedMetrics.distanceKm || '-'}</div>
+                    <div className="text-[11px] sm:text-sm text-gray-600">km</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{computedMetrics.estimatedTimeMinutes || '-'}</div>
-                    <div className="text-sm text-gray-600">min</div>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">{computedMetrics.estimatedTimeMinutes || '-'}</div>
+                    <div className="text-[11px] sm:text-sm text-gray-600">min</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{computedMetrics.weightKg}</div>
-                    <div className="text-sm text-gray-600">kg (package)</div>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">{computedMetrics.weightKg}</div>
+                    <div className="text-[11px] sm:text-sm text-gray-600">kg (package)</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{computedMetrics.ratePerKm}</div>
-                    <div className="text-sm text-gray-600">₹/km</div>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">{computedMetrics.ratePerKm}</div>
+                    <div className="text-[11px] sm:text-sm text-gray-600">₹/km</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* 2. Weather Analysis */}
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+            <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4 sm:p-6 border border-purple-200">
               <div className="flex items-center space-x-2 mb-4">
                 <Cloud className="h-6 w-6 text-purple-600" />
-                <h3 className="font-semibold text-gray-800 text-lg">Weather Analysis</h3>
+                <h3 className="font-semibold text-gray-800 text-base sm:text-lg">Weather Analysis</h3>
               </div>
               <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Pickup Location</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Temperature:</span>
-                        <span className="font-bold text-purple-600 text-sm">{aiData?.weather_context?.pickup_location?.weather?.temperature ?? '-' }°C</span>
+                        <span className="font-bold text-purple-600 text-xs sm:text-sm">{aiData?.weather_context?.pickup_location?.weather?.temperature ?? '-' }°C</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Condition:</span>
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-[10px] sm:text-xs font-medium">
                           {aiData?.weather_context?.pickup_location?.weather?.condition ?? '-'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Humidity:</span>
-                        <span className="font-bold text-purple-600 text-sm">{aiData?.weather_context?.pickup_location?.weather?.humidity ?? '-'}%</span>
+                        <span className="font-bold text-purple-600 text-xs sm:text-sm">{aiData?.weather_context?.pickup_location?.weather?.humidity ?? '-'}%</span>
                       </div>
                     </div>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Delivery Location</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Wind Speed:</span>
-                        <span className="font-bold text-purple-600 text-sm">{aiData?.weather_context?.delivery_location?.weather?.wind_speed ?? '-'} km/h</span>
+                        <span className="font-bold text-purple-600 text-xs sm:text-sm">{aiData?.weather_context?.delivery_location?.weather?.wind_speed ?? '-'} km/h</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Visibility:</span>
-                        <span className="font-bold text-purple-600 text-sm">{aiData?.weather_context?.delivery_location?.weather?.visibility ?? '-'} km</span>
+                        <span className="font-bold text-purple-600 text-xs sm:text-sm">{aiData?.weather_context?.delivery_location?.weather?.visibility ?? '-'} km</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Rain Chance:</span>
-                        <span className="font-bold text-purple-600 text-sm">{aiData?.weather_context?.forecast?.precipitation_chance ?? '-'}%</span>
+                        <span className="font-bold text-purple-600 text-xs sm:text-sm">{aiData?.weather_context?.forecast?.precipitation_chance ?? '-'}%</span>
                       </div>
                     </div>
                   </div>
@@ -1210,52 +1210,52 @@ const AddDelivery = () => {
             </div>
 
             {/* 3. Cost Analysis */}
-            <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
+            <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-4 sm:p-6 border border-orange-200">
               <div className="flex items-center space-x-2 mb-4">
                 <span className="text-orange-600 font-bold text-xl">₹</span>
-                <h3 className="font-semibold text-gray-800 text-lg">Cost Analysis</h3>
+                <h3 className="font-semibold text-gray-800 text-base sm:text-lg">Cost Analysis</h3>
               </div>
               <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Cost Breakdown</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Base Cost:</span>
-                        <span className="font-medium">₹{computedMetrics.baseCost}</span>
+                        <span className="font-medium text-sm sm:text-base">₹{computedMetrics.baseCost}</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Distance Cost:</span>
-                        <span className="font-medium">₹{computedMetrics.distanceCost} ({computedMetrics.distanceKm} km × ₹{computedMetrics.ratePerKm})</span>
+                        <span className="font-medium text-sm sm:text-base">₹{computedMetrics.distanceCost} <span className="hidden sm:inline">({computedMetrics.distanceKm} km × ₹{computedMetrics.ratePerKm})</span></span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Weight Surcharge:</span>
-                        <span className="font-medium">₹{computedMetrics.weightSurcharge} ({Math.max(0, computedMetrics.weightKg - computedMetrics.weightThresholdKg)} kg × ₹{computedMetrics.surchargePerKg})</span>
+                        <span className="font-medium text-sm sm:text-base">₹{computedMetrics.weightSurcharge} <span className="hidden sm:inline">({Math.max(0, computedMetrics.weightKg - computedMetrics.weightThresholdKg)} kg × ₹{computedMetrics.surchargePerKg})</span></span>
                       </div>
                     </div>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Pooling Savings</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Regular Cost:</span>
-                        <span className="font-medium">₹{computedMetrics.totalRegular}</span>
+                        <span className="font-medium text-sm sm:text-base">₹{computedMetrics.totalRegular}</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Pooled Cost:</span>
-                        <span className="font-bold text-green-600">₹{computedMetrics.pooledCost}</span>
+                        <span className="font-bold text-green-600 text-sm sm:text-base">₹{computedMetrics.pooledCost}</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="text-gray-600 text-xs">Total Savings:</span>
-                        <span className="font-bold text-green-600">₹{computedMetrics.savingsAmount} ({computedMetrics.poolingDiscountPercent}%)</span>
+                        <span className="font-bold text-green-600 text-sm sm:text-base">₹{computedMetrics.savingsAmount} ({computedMetrics.poolingDiscountPercent}%)</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="border-t border-orange-200 pt-3">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center gap-2">
                     <span className="text-gray-800 font-semibold">Final Pooled Cost:</span>
-                    <span className="font-bold text-orange-600 text-lg">₹{computedMetrics.pooledCost}</span>
+                    <span className="font-bold text-orange-600 text-base sm:text-lg">₹{computedMetrics.pooledCost}</span>
                   </div>
                 </div>
               </div>
@@ -1416,21 +1416,21 @@ const AddDelivery = () => {
               </div>
 
               {/* 3. Truck Pooling */}
-              <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+              <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 sm:p-6 border border-green-200">
                 <div className="flex items-center space-x-2 mb-4">
                   <Truck className="h-6 w-6 text-green-600" />
-                  <h3 className="font-semibold text-gray-800 text-lg">Truck Pooling</h3>
+                  <h3 className="font-semibold text-gray-800 text-base sm:text-lg">Truck Pooling</h3>
                 </div>
                 {truckPoolingData ? (
                   <div className="space-y-3">
                     {truckPoolingData.hasTruckAvailable ? (
                       <div className="space-y-3">
                         <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                          <p className="text-sm text-green-800 font-medium">
+                          <p className="text-xs sm:text-sm text-green-800 font-medium">
                             🚛 <strong>Truck Available!</strong> {truckPoolingData.message}
                           </p>
                         </div>
-                        <div className="space-y-2 text-sm">
+                        <div className="space-y-2 text-xs sm:text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Truck ID:</span>
                             <span className="font-mono font-medium">{truckPoolingData.truckDetails.truckId}</span>
@@ -1455,13 +1455,13 @@ const AddDelivery = () => {
                               setIsSmartTruckPooling(true);
                               setCurrentStep(3);
                             }}
-                            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                            className="flex-1 bg-green-600 text-white py-2 px-3 sm:px-4 rounded-lg text-sm sm:text-base font-medium hover:bg-green-700 transition-colors"
                           >
                             Use Shared Truck Pooling Form
                           </button>
                           <button
                             onClick={() => handleAddTruckToPool(false)}
-                            className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                            className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 sm:px-4 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-300 transition-colors"
                           >
                             Continue Regular Delivery
                           </button>
@@ -1470,12 +1470,12 @@ const AddDelivery = () => {
                     ) : (
                       <div className="space-y-3">
                         <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                          <p className="text-sm text-yellow-800 font-medium">
+                          <p className="text-xs sm:text-sm text-yellow-800 font-medium">
                             📦 <strong>No Truck Available</strong> for pooling on this route
                           </p>
                         </div>
                         <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-sm text-blue-800">
+                          <p className="text-xs sm:text-sm text-blue-800">
                             💡 <strong>No current matches.</strong> You can still save by using Shared Truck Pooling.
                           </p>
                         </div>
@@ -1486,20 +1486,20 @@ const AddDelivery = () => {
                               setIsSmartTruckPooling(true);
                               setCurrentStep(3);
                             }}
-                            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                            className="flex-1 bg-green-600 text-white py-2 px-3 sm:px-4 rounded-lg text-sm sm:text-base font-medium hover:bg-green-700 transition-colors"
                           >
                             Use Shared Truck Pooling Form
                           </button>
                           <button
                             onClick={() => handleAddTruckToPool(false)}
-                            className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                            className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 sm:px-4 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-300 transition-colors"
                           >
                             Continue Regular Delivery
                           </button>
                         </div>
                         {truckPoolingStatus && (
                           <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-sm text-blue-800 font-medium">
+                            <p className="text-xs sm:text-sm text-blue-800 font-medium">
                               {truckPoolingStatus}
                             </p>
                           </div>
@@ -1509,7 +1509,7 @@ const AddDelivery = () => {
                   </div>
                 ) : (
                   <div className="text-center py-4">
-                    <p className="text-gray-500">Click "Get AI Analysis" in step 3 to check truck pooling availability</p>
+                    <p className="text-gray-500 text-sm">Click "Get AI Analysis" in step 3 to check truck pooling availability</p>
                   </div>
                 )}
               </div>

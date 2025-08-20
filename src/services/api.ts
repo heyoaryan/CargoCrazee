@@ -3,8 +3,13 @@ console.log('Environment Variables Debug:');
 console.log('VITE_API_BASE_URL:', (import.meta as any)?.env?.VITE_API_BASE_URL);
 console.log('VITE_AI_SERVICE_URL:', (import.meta as any)?.env?.VITE_AI_SERVICE_URL);
 
-const API_BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const AI_SERVICE_URL = (import.meta as any)?.env?.VITE_AI_SERVICE_URL || 'http://localhost:8000';
+// Try multiple ways to access environment variables
+const API_BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL || 
+                     process.env.VITE_API_BASE_URL || 
+                     'https://cargocrazee-backend.onrender.com/api';
+const AI_SERVICE_URL = (import.meta as any)?.env?.VITE_AI_SERVICE_URL || 
+                       process.env.VITE_AI_SERVICE_URL || 
+                       'https://cargocrazee-ai-service.onrender.com';
 
 console.log('Final URLs:');
 console.log('API_BASE_URL:', API_BASE_URL);

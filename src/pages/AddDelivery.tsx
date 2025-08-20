@@ -126,14 +126,33 @@ const AddDelivery = () => {
     try {
       setIsLoadingAI(true);
       
-      // Use real coordinates from Delhi industrial hubs
-      const origin = { lat: 28.6139, lon: 77.2090 }; // Delhi center
-      const destination = { lat: 28.4595, lon: 77.0266 }; // Another Delhi location
-      
+      // Resolve coordinates from selected industrial areas (avoid hardcoded coords)
+      const defaultOrigin = { lat: 28.6139, lon: 77.2090 };
+      const defaultDestination = { lat: 28.4595, lon: 77.0266 };
+
+      const hubsResp = await apiService.getIndustrialHubs().catch(() => null);
+      const hubEntries: Array<{ name: string; coordinates: { lat: number; lon: number } }> = hubsResp?.hubs
+        ? Object.values(hubsResp.hubs)
+        : [];
+
+      const findCoordsForAddress = (address: string | undefined | null) => {
+        if (!address) return null;
+        const lower = address.toLowerCase();
+        for (const hub of hubEntries as any[]) {
+          if (lower.includes((hub.name || '').toLowerCase())) {
+            return hub.coordinates;
+          }
+        }
+        return null;
+      };
+
+      const originCoords = findCoordsForAddress(formData.pickupAddress) || defaultOrigin;
+      const destinationCoords = findCoordsForAddress(formData.deliveryAddress) || defaultDestination;
+
       // Get real AI analysis from Python service
       const routeData = await apiService.optimizeRoute({
-        origin,
-        destination,
+        origin: originCoords,
+        destination: destinationCoords,
         departure_time: formData.deliveryDate ? new Date(formData.deliveryDate).toISOString() : undefined
       });
       

@@ -109,8 +109,8 @@ class ApiService {
         ...options.headers,
       },
       ...options,
-      // Add timeout for Render.com free plan sleep wake-up (30 seconds)
-      signal: AbortSignal.timeout(30000),
+      // Add timeout for Render.com free plan sleep wake-up (60 seconds)
+      signal: AbortSignal.timeout(60000),
     };
 
     try {

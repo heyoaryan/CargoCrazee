@@ -115,6 +115,14 @@ const AddDelivery = () => {
     localStorage.setItem('addDeliveryFormData', JSON.stringify(formData));
   }, [formData]);
 
+  // Invalidate AI data when addresses change so distance recalculates instead of staying stale
+  useEffect(() => {
+    if (aiData) {
+      setAiData(null);
+      setShowAISuggestions(false);
+    }
+  }, [formData.pickupAddress, formData.deliveryAddress]);
+
   useEffect(() => {
     localStorage.setItem('addDeliveryShowPackageName', JSON.stringify(showPackageName));
   }, [showPackageName]);
@@ -146,8 +154,23 @@ const AddDelivery = () => {
         return null;
       };
 
-      const originCoords = findCoordsForAddress(formData.pickupAddress) || defaultOrigin;
-      const destinationCoords = findCoordsForAddress(formData.deliveryAddress) || defaultDestination;
+      // Determine coordinates:
+      // 1) Prefer known industrial hub coordinates if the address contains a hub name
+      // 2) Otherwise geocode the free-form address via OSM Nominatim
+      // 3) Finally, fall back to Delhi center and Gurgaon only if geocoding fails
+      let originCoords = findCoordsForAddress(formData.pickupAddress);
+      if (!originCoords && formData.pickupAddress) {
+        const geo = await apiService.geocodeAddress(formData.pickupAddress);
+        if (geo) originCoords = geo as any;
+      }
+      if (!originCoords) originCoords = defaultOrigin;
+
+      let destinationCoords = findCoordsForAddress(formData.deliveryAddress);
+      if (!destinationCoords && formData.deliveryAddress) {
+        const geo = await apiService.geocodeAddress(formData.deliveryAddress);
+        if (geo) destinationCoords = geo as any;
+      }
+      if (!destinationCoords) destinationCoords = defaultDestination;
 
       // Get real AI analysis from Python service
       const routeData = await apiService.optimizeRoute({

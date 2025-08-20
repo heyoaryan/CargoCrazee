@@ -358,6 +358,38 @@ class ApiService {
     return await response.json();
   }
 
+  // Geocode address to coordinates using OpenStreetMap Nominatim
+  async geocodeAddress(address: string): Promise<{ lat: number; lon: number } | null> {
+    try {
+      if (!address || !address.trim()) return null;
+      const params = new URLSearchParams({
+        q: address,
+        format: 'json',
+        addressdetails: '0',
+        limit: '1'
+      });
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+        headers: {
+          // Identify the app politely per Nominatim usage policy
+          'User-Agent': 'CargoCrazee/1.0 (contact: support@cargocrazee.example)'
+        }
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      if (!Array.isArray(data) || data.length === 0) return null;
+      const first = data[0];
+      const lat = parseFloat(first.lat);
+      const lon = parseFloat(first.lon);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        return { lat, lon };
+      }
+      return null;
+    } catch (err) {
+      console.warn('Geocoding failed for address:', address, err);
+      return null;
+    }
+  }
+
   async optimizeRoute(params: {
     origin: { lat: number; lon: number };
     destination: { lat: number; lon: number };

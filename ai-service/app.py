@@ -246,6 +246,7 @@ def get_real_route_data(origin: dict, destination: dict, departure_time: str = N
                 osrm_data = osrm_resp.json()
                 if osrm_data.get("routes"):
                     r = osrm_data["routes"][0]
+                    print(f"🔍 DEBUG: OSRM API successful - Distance: {r.get('distance', 0) / 1000.0} km")
                     return {
                         "distance_km": round((r.get("distance", 0) / 1000.0), 2),
                         "estimated_time_minutes": round((r.get("duration", 0) / 60.0), 1),
@@ -255,14 +256,17 @@ def get_real_route_data(origin: dict, destination: dict, departure_time: str = N
         except Exception as osrm_err:
             print(f"OSRM fallback error: {osrm_err}")
 
-        # Real Delhi Industrial Areas Distance Calculation
-        print(f"🔍 DEBUG: Calling real Delhi distance calculation")
+        # Force Real Delhi Industrial Areas Distance Calculation
+        print(f"🔍 DEBUG: ==========================================")
+        print(f"🔍 DEBUG: FORCING REAL DELHI DISTANCE CALCULATION")
+        print(f"🔍 DEBUG: ==========================================")
         print(f"🔍 DEBUG: Origin coordinates: {origin}")
         print(f"🔍 DEBUG: Destination coordinates: {destination}")
         
         distance_km, time_minutes = calculate_real_delhi_distance(origin, destination)
         
         print(f"🔍 DEBUG: Real Delhi result - Distance: {distance_km} km, Time: {time_minutes} min")
+        print(f"🔍 DEBUG: ==========================================")
         
         return {
             "distance_km": round(distance_km, 2),

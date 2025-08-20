@@ -256,7 +256,13 @@ def get_real_route_data(origin: dict, destination: dict, departure_time: str = N
             print(f"OSRM fallback error: {osrm_err}")
 
         # Real Delhi Industrial Areas Distance Calculation
+        print(f"🔍 DEBUG: Calling real Delhi distance calculation")
+        print(f"🔍 DEBUG: Origin coordinates: {origin}")
+        print(f"🔍 DEBUG: Destination coordinates: {destination}")
+        
         distance_km, time_minutes = calculate_real_delhi_distance(origin, destination)
+        
+        print(f"🔍 DEBUG: Real Delhi result - Distance: {distance_km} km, Time: {time_minutes} min")
         
         return {
             "distance_km": round(distance_km, 2),
@@ -268,11 +274,19 @@ def get_real_route_data(origin: dict, destination: dict, departure_time: str = N
 def calculate_real_delhi_distance(origin: dict, destination: dict) -> tuple:
     """Calculate real distances between Delhi industrial areas"""
     
+    print(f"🔍 DEBUG: calculate_real_delhi_distance called")
+    print(f"🔍 DEBUG: Origin: {origin}")
+    print(f"🔍 DEBUG: Destination: {destination}")
+    
     # Get nearest industrial hubs for origin and destination
     origin_hub = find_nearest_industrial_hub(origin["lat"], origin["lon"])
     dest_hub = find_nearest_industrial_hub(destination["lat"], destination["lon"])
     
+    print(f"🔍 DEBUG: Origin hub: {origin_hub['name'] if origin_hub else 'None'}")
+    print(f"🔍 DEBUG: Destination hub: {dest_hub['name'] if dest_hub else 'None'}")
+    
     if not origin_hub or not dest_hub:
+        print(f"🔍 DEBUG: No hub found, using fallback calculation")
         # Fallback to coordinate-based calculation
         lat_diff = abs(origin["lat"] - destination["lat"])
         lon_diff = abs(origin["lon"] - destination["lon"])
@@ -311,18 +325,26 @@ def calculate_real_delhi_distance(origin: dict, destination: dict) -> tuple:
     route_key = (origin_hub["name"], dest_hub["name"])
     reverse_route_key = (dest_hub["name"], origin_hub["name"])
     
+    print(f"🔍 DEBUG: Checking route: {route_key}")
+    print(f"🔍 DEBUG: Checking reverse route: {reverse_route_key}")
+    print(f"🔍 DEBUG: Available routes: {list(delhi_distances.keys())}")
+    
     if route_key in delhi_distances:
         distance, time = delhi_distances[route_key]
+        print(f"🔍 DEBUG: Route found! Distance: {distance} km, Time: {time} min")
         return distance, time
     elif reverse_route_key in delhi_distances:
         distance, time = delhi_distances[reverse_route_key]
+        print(f"🔍 DEBUG: Reverse route found! Distance: {distance} km, Time: {time} min")
         return distance, time
     else:
+        print(f"🔍 DEBUG: No specific route found, using hub coordinate calculation")
         # If no specific route found, calculate based on hub coordinates
         hub_lat_diff = abs(origin_hub["coordinates"]["lat"] - dest_hub["coordinates"]["lat"])
         hub_lon_diff = abs(origin_hub["coordinates"]["lon"] - dest_hub["coordinates"]["lon"])
         estimated_distance = (hub_lat_diff + hub_lon_diff) * 111
         estimated_time = estimated_distance * 1.5  # More realistic time calculation
+        print(f"🔍 DEBUG: Hub coordinate calculation - Distance: {estimated_distance} km, Time: {estimated_time} min")
         return estimated_distance, estimated_time
 
 def find_nearest_industrial_hub(lat: float, lon: float) -> dict:
